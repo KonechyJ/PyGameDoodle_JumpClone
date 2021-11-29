@@ -3,6 +3,8 @@ from pygame.locals import *
 import sys
 import random
 import time
+from scene import title_screen
+from scene import GameState
 
 
 pygame.init()
@@ -23,7 +25,6 @@ CYAN = (51, 255, 255)
 
 
 FramePerSec = pygame.time.Clock()
-
 displaysurface = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Doodle Jump Game")
 background = pygame.image.load("Background.jpg")
@@ -159,90 +160,99 @@ def check(platform, groupies):
                 return True
         C = False
 
-
-
-all_sprites = pygame.sprite.Group()
-platforms = pygame.sprite.Group()
-gems = pygame.sprite.Group()
-
-P1 = Player()
-
-PT1 = platform(450, 80)
-#PT1.surf = pygame.Surface((WIDTH, 20))
-#PT1.surf.fill(RED)
-PT1.rect = PT1.surf.get_rect(center=(WIDTH / 2, HEIGHT - 10))
-PT1.moving = False
-PT1.point = False
-
-all_sprites.add(PT1)
-all_sprites.add(P1)
-platforms.add(PT1)
-
-
-for x in range(random.randint(5, 6)):
-    C = True
-    pl = platform()
-    while C:
-        pl = platform()
-        C = check(pl, platforms)
-    pl.generateGem()
-    platforms.add(pl)
-    all_sprites.add(pl)
-
-
+game_state = GameState.TITLE
 while True:
-    P1.update()
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                P1.jump()
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_SPACE:
-                P1.cancel_jump()
+    if game_state == GameState.TITLE:
+        game_state = title_screen(displaysurface)
 
-    if P1.rect.top <= HEIGHT / 3:
-        P1.pos.y += abs(P1.vel.y)
-        for plat in platforms:
-            plat.rect.y += abs(P1.vel.y)
-            if plat.rect.top >= HEIGHT:
-                plat.kill()
+    if game_state == GameState.NEWGAME:
+        all_sprites = pygame.sprite.Group()
+        platforms = pygame.sprite.Group()
+        gems = pygame.sprite.Group()
 
-    if P1.rect.top > HEIGHT:
-        for entity in all_sprites:
-            entity.kill()
-            time.sleep(1)
-            displaysurface.fill(RED)
-            # Maybe display GAME OVER IN BLACK HERE
+        P1 = Player()
+
+        PT1 = platform(450, 80)
+        #PT1.surf = pygame.Surface((WIDTH, 20))
+        #PT1.surf.fill(RED)
+        PT1.rect = PT1.surf.get_rect(center=(WIDTH / 2, HEIGHT - 10))
+        PT1.moving = False
+        PT1.point = False
+
+        all_sprites.add(PT1)
+        all_sprites.add(P1)
+        platforms.add(PT1)
+
+
+        for x in range(random.randint(5, 6)):
+            C = True
+            pl = platform()
+            while C:
+                pl = platform()
+                C = check(pl, platforms)
+            pl.generateGem()
+            platforms.add(pl)
+            all_sprites.add(pl)
+
+
+        while True:
+            P1.update()
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        P1.jump()
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        P1.cancel_jump()
+
+            if P1.rect.top <= HEIGHT / 3:
+                P1.pos.y += abs(P1.vel.y)
+                for plat in platforms:
+                    plat.rect.y += abs(P1.vel.y)
+                    if plat.rect.top >= HEIGHT:
+                        plat.kill()
+
+            if P1.rect.top > HEIGHT:
+                for entity in all_sprites:
+                    entity.kill()
+                    time.sleep(1)
+                    displaysurface.fill(RED)
+                    # Maybe display GAME OVER IN BLACK HERE
+                    pygame.display.update()
+                    time.sleep(1)
+                    pygame.quit()
+                    sys.exit()
+
+
+                for gem in gems:
+                    gem.rect.y += abs(P1.vel.y)
+                    if gem.rect.top >= HEIGHT:
+                        gem.kill()
+
+            plat_gen()
+            displaysurface.blit(background, (0, 0))
+            f = pygame.font.SysFont("Verdana", 20)
+            g = f.render(str(P1.score), True, CYAN)
+            displaysurface.blit(g, (WIDTH / 2, 10))
+
+            for entity in all_sprites:
+                displaysurface.blit(entity.surf, entity.rect)
+                entity.move()
+
+            for gem in gems:
+                displaysurface.blit(gem.image, gem.rect)
+                gem.update()
+
             pygame.display.update()
-            time.sleep(1)
+            FramePerSec.tick(FPS)
+        if game_state == GameState.RULES:
+            game_state = rules(screen)
+
+        if game_state == GameState.QUIT:
             pygame.quit()
-            sys.exit()
-
-
-        for gem in gems:
-            gem.rect.y += abs(P1.vel.y)
-            if gem.rect.top >= HEIGHT:
-                gem.kill()
-
-    plat_gen()
-    displaysurface.blit(background, (0, 0))
-    f = pygame.font.SysFont("Verdana", 20)
-    g = f.render(str(P1.score), True, CYAN)
-    displaysurface.blit(g, (WIDTH / 2, 10))
-
-    for entity in all_sprites:
-        displaysurface.blit(entity.surf, entity.rect)
-        entity.move()
-
-    for gem in gems:
-        displaysurface.blit(gem.image, gem.rect)
-        gem.update()
-
-    pygame.display.update()
-    FramePerSec.tick(FPS)
 
 
 
